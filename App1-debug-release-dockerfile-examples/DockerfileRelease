@@ -1,0 +1,22 @@
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS base
+USER $APP_UID
+WORKDIR /app/publish
+
+FROM localhost:30500/debugger-ide-image-base:1.0.1 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+COPY DockerDebugDemoWithRedisServiceA.csproj .
+RUN dotnet restore "DockerDebugDemoWithRedisServiceA.csproj"
+
+COPY . .
+
+RUN dotnet build "DockerDebugDemoWithRedisServiceA.csproj" -c $BUILD_CONFIGURATION  -o /src/build
+
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "DockerDebugDemoWithRedisServiceA.csproj" -c $BUILD_CONFIGURATION  -o /src/publish /p:UseAppHost=false
+
+FROM base AS final
+WORKDIR /src/publish
+COPY --from=publish /src/publish .
+ENTRYPOINT [ "dotnet", "DockerDebugDemoWithRedisServiceA.dll"]

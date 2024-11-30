@@ -1,0 +1,16 @@
+# Use the SDK image to build and publish the app
+FROM localhost:30500/debugger-ide-image-base:1.0.1 AS build
+WORKDIR /src
+COPY DockerDebugDemoWithRedisServiceA.csproj .
+RUN dotnet restore "DockerDebugDemoWithRedisServiceA.csproj"
+COPY . .
+# Build In Debug Mode.
+RUN dotnet publish "DockerDebugDemoWithRedisServiceA.csproj" -c Debug -o /src/publish /p:UseAppHost=false
+
+# Copy supervisor configuration
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+COPY startup-script.sh /scripts/startup-script.sh
+
+# Ensure the startup script is executable
+RUN chmod +x /scripts/startup-script.sh
